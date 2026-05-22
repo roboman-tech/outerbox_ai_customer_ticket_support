@@ -25,7 +25,8 @@ Edit `.env` and set `DEEPSEEK_API_KEY`.
 ## Sample curl
 
 ```powershell
-curl.exe -X POST http://127.0.0.1:8000/triage -H "Content-Type: application/json" -d '{"ticket_id":"t-001","subject":"Cannot log in","body":"I reset my password but still cannot access my account."}'
+$body = @{ ticket_id = "t-001"; subject = "Cannot log in"; body = "I reset my password but still cannot access my account." } | ConvertTo-Json -Compress
+$body | curl.exe http://127.0.0.1:8000/triage -H "Content-Type: application/json" --data-binary "@-"
 ```
 
 Example response:
