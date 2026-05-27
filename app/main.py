@@ -12,6 +12,8 @@ app = FastAPI(title="AI Ticket Triage")
 async def validation_exception_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
+    # Interview note: request validation fails before the LLM is called, so bad
+    # customer/API input is separated from model or provider failures.
     return JSONResponse(
         status_code=400,
         content={"detail": "Request body failed validation", "errors": exc.errors()},
@@ -26,6 +28,8 @@ def health() -> dict[str, str]:
 @app.post("/triage", response_model=TriageResponse)
 def triage(ticket: TicketRequest) -> TriageResponse:
     try:
+        # Keep provider-specific work inside the client so the API route remains
+        # focused on HTTP behavior and response shape.
         result = DeepSeekTriageClient().triage(ticket)
     except LLMOutputError as exc:
         return _error(422, "LLM output could not be coerced into the response schema", exc)
@@ -38,8 +42,8 @@ def triage(ticket: TicketRequest) -> TriageResponse:
 
 
 def _error(status_code: int, detail: str, exc: Exception) -> JSONResponse:
+    # Centralized error responses make it easy to explain the 400/422/502 split.
     return JSONResponse(
         status_code=status_code,
         content={"detail": detail, "error": str(exc)},
     )
-
